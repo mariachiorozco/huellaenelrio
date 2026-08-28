@@ -2,7 +2,7 @@
 
 Un registro ciudadano de la basura a lo largo del Río Ramos, en Allende, Nuevo León — documentado con fotos geolocalizadas para pedir apoyo a las autoridades locales.
 
-🔗 **Sitio en vivo:** [huella-en-el-rio](TU-LINK-AQUÍ)
+🔗 **Sitio en vivo:** [huella-en-el-rio](https://mariachiorozco.github.io/huellaenelrio/)
 
 ## ¿Qué es esto?
 
