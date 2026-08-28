@@ -102,7 +102,7 @@ const PINS = [
     "lat": 25.225683,
     "lng": -100.060189,
     "image": "images/Canavati_a_Media_Luna/IMG_8086.jpg",
-    "caption": "",
+    "caption": "Prueba",
     "date": "2026:08:27 09:18:32",
     "status": "reported"
   }
