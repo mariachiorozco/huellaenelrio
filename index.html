@@ -7,8 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
 <style>
   :root{
     --deep-river:#16403F;
@@ -265,7 +263,6 @@
 <script src="pins.js"></script>
 <script src="trail.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script>
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
@@ -391,20 +388,53 @@
       iconAnchor: [11, 22],
     });
 
-    function clusterIconFactory(color) {
-      return function (cluster) {
-        const count = cluster.getChildCount();
-        const size = count < 10 ? 34 : count < 25 ? 42 : 50;
-        return L.divIcon({
-          className: '',
-          html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};color:white;
-                  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
-                  font-weight:600;font-size:${count < 10 ? 13 : 14}px;border:3px solid white;
-                  box-shadow:0 2px 8px rgba(0,0,0,0.4);">${count}</div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
+    // Photos taken seconds apart while walking often land almost exactly on
+    // top of each other. Rather than merging them into a single "count"
+    // bubble, spread pins that are very close together into a small ring
+    // around their shared center, so every photo stays its own visible,
+    // clickable dot. Pins far enough apart are left exactly where they are.
+    function spreadNearbyPins(pins, groupRadiusMeters = 12, spreadRadiusMeters = 9) {
+      function distMeters(a, b) {
+        const R = 6371000;
+        const dLat = (b.lat - a.lat) * Math.PI / 180;
+        const dLng = (b.lng - a.lng) * Math.PI / 180;
+        const lat1 = a.lat * Math.PI / 180, lat2 = b.lat * Math.PI / 180;
+        const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(h));
+      }
+
+      const used = new Array(pins.length).fill(false);
+      const groups = [];
+      for (let i = 0; i < pins.length; i++) {
+        if (used[i]) continue;
+        const group = [pins[i]];
+        used[i] = true;
+        for (let j = i + 1; j < pins.length; j++) {
+          if (used[j]) continue;
+          if (distMeters(pins[i], pins[j]) < groupRadiusMeters) {
+            group.push(pins[j]);
+            used[j] = true;
+          }
+        }
+        groups.push(group);
+      }
+
+      const placed = [];
+      groups.forEach(group => {
+        if (group.length === 1) {
+          placed.push({ pin: group[0], lat: group[0].lat, lng: group[0].lng });
+          return;
+        }
+        const clat = group.reduce((s, p) => s + p.lat, 0) / group.length;
+        const clng = group.reduce((s, p) => s + p.lng, 0) / group.length;
+        group.forEach((p, idx) => {
+          const angle = (2 * Math.PI * idx) / group.length;
+          const dLat = (spreadRadiusMeters * Math.cos(angle)) / 111320;
+          const dLng = (spreadRadiusMeters * Math.sin(angle)) / (111320 * Math.cos(clat * Math.PI / 180));
+          placed.push({ pin: p, lat: clat + dLat, lng: clng + dLng });
         });
-      };
+      });
+      return placed;
     }
 
     let mapLayers = []; // everything drawn for the current selection, so we can clear and redraw
@@ -437,20 +467,13 @@
       }
 
       const filteredPins = locationSlug === 'all' ? PINS : PINS.filter(p => p.location === locationSlug);
-      const reportedCluster = L.markerClusterGroup({
-        iconCreateFunction: clusterIconFactory('#D97A25'),
-        maxClusterRadius: 50,
-      });
-      const clearedCluster = L.markerClusterGroup({
-        iconCreateFunction: clusterIconFactory('#4F7A5B'),
-        maxClusterRadius: 50,
-      });
+      const placedPins = spreadNearbyPins(filteredPins);
 
-      filteredPins.forEach(p => {
+      placedPins.forEach(({ pin: p, lat, lng }) => {
         bounds.push([p.lat, p.lng]);
         const isCleaned = p.status === 'cleaned';
         const showLoc = locationSlug === 'all' && p.locationName;
-        const m = L.marker([p.lat, p.lng], { icon: isCleaned ? clearedIcon : amberIcon });
+        const m = L.marker([lat, lng], { icon: isCleaned ? clearedIcon : amberIcon }).addTo(map);
         m.on('click', () => openLightbox({
           src: p.image,
           caption: p.caption,
@@ -458,12 +481,8 @@
           cleaned: isCleaned,
           locationName: showLoc ? p.locationName : null,
         }));
-        (isCleaned ? clearedCluster : reportedCluster).addLayer(m);
+        mapLayers.push(m);
       });
-
-      reportedCluster.addTo(map);
-      clearedCluster.addTo(map);
-      mapLayers.push(reportedCluster, clearedCluster);
 
       statsFor(filteredPins);
 
