@@ -9,7 +9,8 @@ const CONFIG = {
   mapZoom: 10,
 
   siteTitle: "Huella en el Río",
-  tagline: "Un registro ciudadano de la basura a lo largo del río — y una petición para ayudar a resolverlo.",
+  tagline: "Un registro ciudadano de la basura a lo largo del río —", 
+            "y una petición para ayudar a resolverlo.",
 
   documentedBy: "Documentado por Cynthia Orozco",
   contactEmail: "cynthiaeog@gmail.com",
