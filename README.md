@@ -16,4 +16,4 @@ Cada punto en el mapa es un lugar real, fotografiado en persona, que muestra la 
 
 ---
 
-Proyecto independiente y sin fines de lucro. Documentado por Cynthia.
+Proyecto independiente y sin fines de lucro. Documentado por Cynthia Orozco Garza.
