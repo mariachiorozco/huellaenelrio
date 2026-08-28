@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lo Que No Ves</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep-river:#16403F;
+    --river-blue:#3E7C7C;
+    --trail-sand:#EFE6D0;
+    --paper:#F8F3E7;
+    --moss:#5B6E4F;
+    --amber:#D97A25;
+    --cleared:#4F7A5B;
+    --ink:#1F2A24;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--trail-sand);
+    color:var(--ink);
+    font-family:'Public Sans',sans-serif;
+    line-height:1.55;
+  }
+  h1,h2{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  a{color:inherit;}
+
+  header{
+    background:var(--deep-river);
+    color:white;
+    padding:2.25rem 1.5rem 2rem;
+  }
+  .header-inner{max-width:44rem;margin:0 auto;}
+  .back-link{
+    display:inline-block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.78rem;
+    color:#CFE0DD;
+    text-decoration:none;
+    margin-bottom:1rem;
+  }
+  .back-link:hover{color:white;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
+    color:#F2C48A;margin-bottom:.5rem;
+  }
+  header h1{font-size:2.1rem;}
+  header p.tagline{color:#CFE0DD;max-width:38rem;margin-top:.6rem;font-size:1rem;}
+
+  main{max-width:44rem;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+  .empty-state{
+    background:white;border:1px solid rgba(91,110,79,.2);border-radius:.9rem;
+    padding:2.5rem 1.5rem;text-align:center;color:var(--moss);
+  }
+  .empty-state p{max-width:30rem;margin:.5rem auto 0;font-size:.95rem;}
+
+  .pair-card{
+    background:white;
+    border:1px solid rgba(91,110,79,.2);
+    border-radius:.9rem;
+    overflow:hidden;
+    margin-bottom:1.75rem;
+  }
+  .pair-meta{
+    padding:.85rem 1.1rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:.4rem;
+    border-bottom:1px solid rgba(91,110,79,.15);
+  }
+  .pair-meta .loc{font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;}
+  .pair-meta .days{
+    font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--moss);
+  }
+
+  .slider-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/3;
+    overflow:hidden;
+    touch-action:none;
+    user-select:none;
+    cursor:ew-resize;
+    background:#ddd;
+  }
+  .layer{position:absolute; inset:0;}
+  .layer img{width:100%;height:100%;object-fit:cover;display:block;}
+  .layer .tag{
+    position:absolute; top:12px;
+    font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;
+    text-transform:uppercase;padding:.3rem .6rem;border-radius:.3rem;
+  }
+  .layer.before .tag{left:12px;background:var(--amber);color:white;}
+  .layer.after .tag{right:12px;background:var(--cleared);color:white;}
+  .layer.after{z-index:2;}
+  .layer.before{z-index:1;}
+
+  .handle{
+    position:absolute; top:0; bottom:0; width:3px; background:white;
+    z-index:3; pointer-events:none; box-shadow:0 0 12px rgba(0,0,0,.4);
+  }
+  .grip{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:42px;height:42px;background:white;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+  .grip svg{width:18px;height:18px;}
+
+  .captions{
+    display:flex; padding:.9rem 1.1rem; gap:1rem; font-size:.85rem;
+  }
+  .captions div{flex:1;}
+  .captions .label{
+    font-family:'JetBrains Mono',monospace;font-size:.68rem;
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;
+  }
+  .captions .before-label{color:var(--amber);}
+  .captions .after-label{color:var(--cleared);}
+  .captions .cap-text{color:var(--ink);}
+
+  footer{
+    text-align:center;padding:2rem 1.5rem 3rem;color:var(--moss);font-size:.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="back-link" href="index.html">← Volver al mapa</a>
+    <div class="eyebrow">Evidencia real, no ilustrada</div>
+    <h1 id="page-title">Lo Que No Ves</h1>
+    <p class="tagline" id="page-tagline"></p>
+  </div>
+</header>
+
+<main>
+  <div id="pairs-container"></div>
+</main>
+
+<footer id="footer-credit"></footer>
+
+<script src="config.js"></script>
+<script src="pins.js"></script>
+<script>
+  document.getElementById('page-tagline').textContent =
+    'Cada par de fotos es real: la misma persona documentó el mismo punto dos veces — una vez con basura, y otra después de que alguien la levantó. Arrastra para comparar.';
+  document.getElementById('footer-credit').textContent =
+    (CONFIG.siteTitle || 'Huella') + ' · ' + (CONFIG.documentedBy || '');
+
+  const container = document.getElementById('pairs-container');
+  const allPairs = typeof PAIRS !== 'undefined' ? PAIRS : [];
+
+  if (allPairs.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2 style="font-size:1.2rem;">Todavía no hay pares antes/después</h2>
+        <p>
+          Esta página se llena sola: en cuanto una foto marcada como reporte de basura
+          y otra foto cercana marcada <code>CLEANED</code> existan para el mismo lugar,
+          <code>generate_pins.py</code> las empareja automáticamente aquí. Sigue documentando
+          y limpiando puntos — la evidencia se junta con el tiempo.
+        </p>
+      </div>`;
+  } else {
+    allPairs.forEach((pair, i) => {
+      const card = document.createElement('div');
+      card.className = 'pair-card';
+
+      const daysText = pair.daysBetween != null
+        ? `${pair.daysBetween} día${pair.daysBetween === 1 ? '' : 's'} después`
+        : 'fecha no disponible';
+      const distText = `${pair.distanceMeters} m de distancia entre fotos`;
+
+      card.innerHTML = `
+        <div class="pair-meta">
+          <span class="loc">${pair.locationName}</span>
+          <span class="days">${daysText} · ${distText}</span>
+        </div>
+        <div class="slider-frame" data-index="${i}">
+          <div class="layer before">
+            <span class="tag">Antes</span>
+            <img src="${pair.before.image}" alt="Antes: ${pair.locationName}">
+          </div>
+          <div class="layer after" data-clip>
+            <span class="tag">Después</span>
+            <img src="${pair.after.image}" alt="Después: ${pair.locationName}">
+          </div>
+          <div class="handle" style="left:50%;">
+            <div class="grip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1F2A24" stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 3 12 9 6"></polyline>
+                <polyline points="15 6 21 12 15 18"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="captions">
+          <div>
+            <div class="label before-label">Antes</div>
+            <div class="cap-text">${pair.before.caption || '—'}</div>
+          </div>
+          <div>
+            <div class="label after-label">Después</div>
+            <div class="cap-text">${pair.after.caption || '—'}</div>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    // Wire up drag behavior for every slider on the page.
+    document.querySelectorAll('.slider-frame').forEach(frame => {
+      const clipLayer = frame.querySelector('[data-clip]');
+      const handle = frame.querySelector('.handle');
+      let pos = 50;
+
+      function update() {
+        clipLayer.style.clipPath = `inset(0 ${100 - pos}% 0 0)`;
+        handle.style.left = pos + '%';
+      }
+      function setFromClientX(clientX) {
+        const rect = frame.getBoundingClientRect();
+        pos = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+        update();
+      }
+
+      let dragging = false;
+      frame.addEventListener('pointerdown', e => { dragging = true; setFromClientX(e.clientX); frame.setPointerCapture(e.pointerId); });
+      frame.addEventListener('pointermove', e => { if (dragging) setFromClientX(e.clientX); });
+      frame.addEventListener('pointerup', () => dragging = false);
+      frame.addEventListener('pointercancel', () => dragging = false);
+      frame.tabIndex = 0;
+      frame.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft') { pos = Math.max(0, pos - 5); update(); }
+        if (e.key === 'ArrowRight') { pos = Math.min(100, pos + 5); update(); }
+      });
+      update();
+    });
+  }
+</script>
+
+</body>
+</html>

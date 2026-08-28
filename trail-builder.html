@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Huella en el Río — Creador del Sendero</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root{
+    --deep-river:#16403F; --river-blue:#3E7C7C; --trail-sand:#EFE6D0;
+    --paper:#F8F3E7; --moss:#5B6E4F; --amber:#D97A25; --ink:#1F2A24;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Public Sans',sans-serif;color:var(--ink);background:var(--trail-sand);}
+  header{background:var(--deep-river);color:white;padding:1.25rem 1.5rem;}
+  header h1{font-family:'Fraunces',serif;font-size:1.4rem;margin:0 0 .25rem;}
+  header p{margin:0;color:#CFE0DD;font-size:.9rem;max-width:40rem;}
+  .layout{display:flex;flex-wrap:wrap;}
+  #map{flex:1 1 60%;min-width:300px;height:78vh;}
+  .panel{flex:1 1 320px;max-width:400px;padding:1rem 1.25rem;background:var(--paper);height:78vh;overflow-y:auto;}
+  .panel h2{font-family:'Fraunces',serif;font-size:1.05rem;margin:0 0 .5rem;}
+  .layer-toggle{display:flex;gap:.4rem;margin-bottom:1rem;}
+  .layer-toggle button{
+    flex:1;padding:.5rem;border-radius:.5rem;border:1px solid var(--moss);
+    background:white;color:var(--moss);font-size:.8rem;cursor:pointer;
+  }
+  .layer-toggle button.active{background:var(--deep-river);color:white;border-color:var(--deep-river);}
+  .stat-line{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--moss);margin-bottom:1rem;}
+  .stat-line b{color:var(--amber);}
+  ol#point-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4rem;}
+  ol#point-list li{
+    background:white;border:1px solid rgba(91,110,79,.25);border-radius:.5rem;
+    padding:.5rem .6rem;font-size:.85rem;display:flex;align-items:center;gap:.5rem;
+  }
+  ol#point-list li .num{
+    width:20px;height:20px;border-radius:50%;background:var(--amber);color:white;
+    font-size:.7rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    font-family:'JetBrains Mono',monospace;
+  }
+  ol#point-list li .name{flex:1;}
+  ol#point-list li button{
+    background:none;border:none;color:var(--moss);cursor:pointer;font-size:.9rem;padding:2px 4px;
+  }
+  ol#point-list li button:hover{color:#B0483B;}
+  .empty-hint{color:var(--moss);font-size:.85rem;font-style:italic;}
+  .actions{margin-top:1.25rem;display:flex;flex-direction:column;gap:.5rem;}
+  .actions button{
+    padding:.7rem;border-radius:.6rem;border:none;font-weight:600;cursor:pointer;font-size:.9rem;
+  }
+  #download-btn{background:var(--deep-river);color:white;}
+  #download-btn:disabled{background:#B7BFAF;cursor:not-allowed;}
+  #clear-btn{background:transparent;color:#B0483B;border:1px solid #B0483B;}
+  .note{font-size:.78rem;color:var(--moss);margin-top:1rem;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Creador del Sendero</h1>
+  <p>Si ya ejecutaste <code>gpx_to_trail.py</code> con una ruta descargada, esa línea del sendero se cargará abajo como referencia — solo haz clic para agregar puntos de referencia sobre ella. ¿Empezando desde cero? Haz clic en los puntos a lo largo del río, en orden, para dibujar el sendero. Cambia a Satélite para ver el río claramente.</p>
+</header>
+
+<div class="layout">
+  <div id="map"></div>
+  <div class="panel">
+    <div class="layer-toggle">
+      <button id="btn-street" class="active">Mapa de calles</button>
+      <button id="btn-satellite">Satélite</button>
+    </div>
+
+    <div class="stat-line">
+      <b id="point-count">0</b> puntos de referencia marcados · <b id="total-dist">0.0</b> km de sendero
+    </div>
+
+    <h2>Tus puntos de referencia</h2>
+    <ol id="point-list"></ol>
+    <p class="empty-hint" id="empty-hint">Aún no hay puntos de referencia — haz clic en el mapa (o sobre la línea del sendero importada) para agregar uno.</p>
+
+    <div class="actions">
+      <button id="download-btn" disabled>Descargar trail.js</button>
+      <button id="clear-btn">Borrar todos los puntos</button>
+    </div>
+
+    <p class="note">
+      Después de descargarlo, mueve <code>trail.js</code> a tu carpeta del proyecto, reemplazando el anterior.
+      Abre <code>index.html</code> para ver el sendero dibujado en tu mapa.
+    </p>
+  </div>
+</div>
+
+<script src="trail.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  const map = L.map('map').setView([25.283, -100.017], 13);
+
+  const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const satelliteLayer = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19, attribution: 'Tiles &copy; Esri' }
+  );
+
+  document.getElementById('btn-street').onclick = () => {
+    map.removeLayer(satelliteLayer);
+    streetLayer.addTo(map);
+    setActive('btn-street');
+  };
+  document.getElementById('btn-satellite').onclick = () => {
+    map.removeLayer(streetLayer);
+    satelliteLayer.addTo(map);
+    setActive('btn-satellite');
+  };
+  function setActive(id) {
+    document.getElementById('btn-street').classList.toggle('active', id === 'btn-street');
+    document.getElementById('btn-satellite').classList.toggle('active', id === 'btn-satellite');
+  }
+
+  // If trail.js already has an imported GPX line, show it as a reference —
+  // this line is drawn once and never edited here, only landmarks are added.
+  const importedLine = (typeof TRAIL_LINE !== 'undefined' && TRAIL_LINE.length > 0) ? TRAIL_LINE : null;
+  if (importedLine) {
+    L.polyline(importedLine, { color: '#3E7C7C', weight: 4, opacity: 0.7, dashArray: '2 6' }).addTo(map);
+    map.fitBounds(importedLine, { padding: [30, 30] });
+  }
+
+  let points = []; // {lat, lng, label, marker}  -- these are LANDMARKS, not the line itself
+
+  function haversine(a, b) {
+    const R = 6371;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const lat1 = a.lat * Math.PI / 180, lat2 = b.lat * Math.PI / 180;
+    const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  function trailLengthKm() {
+    // If we have an imported line, that's the real trail length.
+    // Otherwise, fall back to distance between clicked landmarks in order.
+    if (importedLine && importedLine.length > 1) {
+      let d = 0;
+      for (let i = 1; i < importedLine.length; i++) {
+        d += haversine(
+          { lat: importedLine[i-1][0], lng: importedLine[i-1][1] },
+          { lat: importedLine[i][0], lng: importedLine[i][1] }
+        );
+      }
+      return d;
+    }
+    let d = 0;
+    for (let i = 1; i < points.length; i++) d += haversine(points[i-1], points[i]);
+    return d;
+  }
+
+  let manualLine = null; // only used when there's no importedLine
+
+  function redrawManualLine() {
+    if (importedLine) return; // reference line is fixed, never redrawn
+    if (manualLine) map.removeLayer(manualLine);
+    if (points.length > 1) {
+      manualLine = L.polyline(points.map(p => [p.lat, p.lng]), { color: '#D97A25', weight: 4, opacity: 0.85 }).addTo(map);
+    }
+  }
+
+  function numberIcon(n) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="width:24px;height:24px;border-radius:50%;background:#16403F;color:white;
+              display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+              font-size:11px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,.35);">${n}</div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+
+  function renumberMarkers() {
+    points.forEach((p, i) => p.marker.setIcon(numberIcon(i + 1)));
+  }
+
+  function refreshPanel() {
+    document.getElementById('point-count').textContent = points.length;
+    document.getElementById('total-dist').textContent = trailLengthKm().toFixed(2);
+    document.getElementById('empty-hint').style.display = points.length ? 'none' : 'block';
+    document.getElementById('download-btn').disabled = points.length === 0 && !importedLine;
+
+    const list = document.getElementById('point-list');
+    list.innerHTML = '';
+    points.forEach((p, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="num">${i + 1}</span><span class="name">${p.label}</span>`;
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.onclick = () => removePoint(i);
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  }
+
+  function removePoint(i) {
+    map.removeLayer(points[i].marker);
+    points.splice(i, 1);
+    renumberMarkers();
+    redrawManualLine();
+    refreshPanel();
+  }
+
+  function addLandmark(latlng, label) {
+    const marker = L.marker(latlng, { icon: numberIcon(points.length + 1) }).addTo(map);
+    marker.bindTooltip(label, { permanent: false, direction: 'top' });
+    points.push({ lat: latlng.lat, lng: latlng.lng, label, marker });
+    redrawManualLine();
+    refreshPanel();
+  }
+
+  // Preload landmarks that already exist in trail.js, so re-opening this
+  // tool doesn't lose previous labeling work.
+  if (typeof TRAIL_LANDMARKS !== 'undefined') {
+    TRAIL_LANDMARKS.forEach(p => addLandmark({ lat: p.lat, lng: p.lng }, p.label));
+  }
+
+  map.on('click', (e) => {
+    const label = prompt('¿Cómo se llama este lugar? (por ejemplo, "Inicio del sendero", "Charco de las Víboras")', points.length === 0 ? 'Inicio del sendero' : '');
+    if (label === null) return; // cancelled
+    addLandmark(e.latlng, label.trim() || `Punto ${points.length + 1}`);
+  });
+
+  document.getElementById('clear-btn').onclick = () => {
+    if (!points.length) return;
+    if (!confirm('¿Quitar todos los puntos de referencia? (Esto no afecta una línea de sendero importada.)')) return;
+    points.forEach(p => map.removeLayer(p.marker));
+    points = [];
+    redrawManualLine();
+    refreshPanel();
+  };
+
+  document.getElementById('download-btn').onclick = () => {
+    const landmarks = points.map(p => ({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), label: p.label }));
+    const line = importedLine ? importedLine : points.map(p => [+p.lat.toFixed(6), +p.lng.toFixed(6)]);
+    const content =
+      "// Built with trail-builder.html\n" +
+      "// TRAIL_LINE draws the path itself. TRAIL_LANDMARKS are named pins along it.\n" +
+      "const TRAIL_LINE = " + JSON.stringify(line, null, 2) + ";\n\n" +
+      "const TRAIL_LANDMARKS = " + JSON.stringify(landmarks, null, 2) + ";\n";
+    const blob = new Blob([content], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'trail.js';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  refreshPanel();
+</script>
+
+</body>
+</html>

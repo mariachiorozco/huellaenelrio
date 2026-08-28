@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Huella en el Río</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root{
+    --deep-river:#16403F;
+    --river-blue:#3E7C7C;
+    --trail-sand:#EFE6D0;
+    --paper:#F8F3E7;
+    --moss:#5B6E4F;
+    --amber:#D97A25;
+    --cleared:#4F7A5B;
+    --ink:#1F2A24;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--trail-sand);
+    color:var(--ink);
+    font-family:'Public Sans',sans-serif;
+    line-height:1.55;
+  }
+  h1,h2{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .hero{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    height:100dvh; /* modern browsers: accounts for mobile browser chrome */
+  }
+  header{
+    flex:0 0 auto;
+    background:var(--deep-river);
+    color:white;
+    padding:1.5rem 1.5rem 1.25rem;
+    text-align:center;
+  }
+  .eyebrow{
+    display:flex;align-items:center;justify-content:center;gap:.5rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
+    color:#F2C48A;margin-bottom:.35rem;
+  }
+  .brand-link{
+    display:inline-block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.75rem;color:#CFE0DD;text-decoration:none;
+    margin-bottom:.5rem;
+  }
+  .brand-link:hover{color:white;}
+  header h1{font-size:2rem;}
+  header p.tagline{color:#CFE0DD;max-width:38rem;margin:.5rem auto 0;font-size:1rem;}
+  .doc-by{color:#9FC4BE;font-size:.85rem;margin-top:.6rem;}
+
+  .stats{display:flex;justify-content:center;gap:2rem;margin-top:1.1rem;flex-wrap:wrap;}
+  .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.6rem;color:var(--amber);line-height:1;}
+  .stat-label{font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;color:#CFE0DD;margin-top:.3rem;}
+
+  .map-wrap{
+    flex:1 1 auto;
+    position:relative;
+    min-height:280px;
+    display:flex;
+    flex-direction:column;
+  }
+  #map{
+    width:100%;
+    flex:1 1 auto;
+    border-top:1px solid rgba(0,0,0,.1);
+  }
+
+  /* Location switcher — only rendered when there's more than one location */
+  .location-tabs{
+    flex:0 0 auto;
+    display:flex;
+    gap:.4rem;
+    overflow-x:auto;
+    padding:.6rem .75rem;
+    background:var(--paper);
+    border-top:1px solid rgba(0,0,0,.06);
+    scrollbar-width:none;
+  }
+  .location-tabs::-webkit-scrollbar{display:none;}
+  .location-tab{
+    flex:0 0 auto;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.72rem;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    padding:.4rem .75rem;
+    border-radius:999px;
+    border:1px solid rgba(91,110,79,.35);
+    background:white;
+    color:var(--moss);
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all .2s ease;
+  }
+  .location-tab:hover{border-color:var(--deep-river); color:var(--deep-river);}
+  .location-tab.active{
+    background:var(--deep-river);
+    border-color:var(--deep-river);
+    color:white;
+    font-weight:600;
+  }
+  .empty-banner{
+    position:absolute;
+    inset:0;
+    background:var(--paper);
+    text-align:center;
+    padding:2.5rem 1.5rem;
+    color:var(--moss);
+    font-size:.95rem;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+
+  main{max-width:44rem;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+  section{margin-bottom:2.5rem;}
+  section h2{font-size:1.4rem;margin-bottom:.75rem;}
+  section p{color:var(--ink);}
+
+  .ask-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.6rem;}
+  .ask-list li{
+    background:white;
+    border:1px solid rgba(91,110,79,.2);
+    border-radius:.7rem;
+    padding:.85rem 1rem;
+    display:flex;
+    gap:.7rem;
+    align-items:flex-start;
+    font-size:.95rem;
+  }
+  .ask-list li::before{
+    content:"→";
+    color:var(--amber);
+    font-weight:700;
+    flex-shrink:0;
+  }
+
+  footer{
+    text-align:center;
+    padding:2rem 1.5rem 3rem;
+    color:var(--moss);
+    font-size:.85rem;
+  }
+
+  .leaflet-popup-content{font-family:'Public Sans',sans-serif;}
+  .popup-img{width:100%;max-width:220px;border-radius:.5rem;display:block;margin-bottom:.4rem;cursor:zoom-in;}
+
+  .lightbox{
+    display:none;
+    position:fixed; inset:0; z-index:3000;
+    background:rgba(15,20,18,.92);
+    align-items:center; justify-content:center;
+    padding:2rem 1rem;
+    cursor:zoom-out;
+  }
+  .lightbox.open{display:flex;}
+  .lightbox-body{display:flex; flex-direction:column; align-items:center; max-width:min(92vw, 900px);}
+  .lightbox img{
+    max-width:100%; max-height:78vh;
+    border-radius:.5rem;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .lightbox-caption{color:white; text-align:center; margin-top:1rem;}
+  .lightbox-caption .lb-loc{
+    font-family:'JetBrains Mono',monospace; font-size:.72rem; letter-spacing:.04em;
+    color:#CFE0DD; margin-bottom:.35rem;
+  }
+  .lightbox-caption .lb-badge{color:#8FD4A8; font-weight:600; font-size:.85rem; margin-bottom:.35rem;}
+  .lightbox-caption .lb-cap{font-size:1rem; margin-bottom:.35rem;}
+  .lightbox-caption .lb-date{
+    font-family:'JetBrains Mono',monospace; font-size:.7rem; color:rgba(255,255,255,.55);
+  }
+  .lightbox-close{
+    position:fixed; top:1rem; right:1.25rem;
+    color:white; font-size:2rem; line-height:1;
+    background:none; border:none; cursor:pointer;
+    font-family:'Public Sans',sans-serif;
+  }
+  .popup-caption{font-size:.85rem;margin:0 0 .3rem;}
+  .popup-date{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--moss);margin:0;}
+
+  @media (max-width:600px){
+    header h1{font-size:1.6rem;}
+    .stats{gap:1.25rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+<header>
+  <div class="eyebrow">📍 Documentación independiente de campo</div>
+  <h1 id="site-title">Huella en el Río</h1>
+  <p class="tagline" id="site-tagline"></p>
+  <p class="doc-by" id="documented-by"></p>
+  <a id="lqnv-link" href="lo-que-no-ves.html" style="display:none; margin-top:.75rem; font-family:'JetBrains Mono',monospace; font-size:.8rem; color:#F2C48A; text-decoration:none;">
+    Ver "Lo Que No Ves" — evidencia antes/después →
+  </a>
+  <div class="stats">
+    <div>
+      <div class="stat-value mono" id="stat-total">0</div>
+      <div class="stat-label">Puntos documentados</div>
+    </div>
+    <div>
+      <div class="stat-value mono" id="stat-cleaned" style="color:#8FD4A8;">0</div>
+      <div class="stat-label">Ya limpios</div>
+    </div>
+    <div>
+      <div class="stat-value mono" id="stat-range">—</div>
+      <div class="stat-label">Rango de fechas</div>
+    </div>
+    <div id="trail-length-stat" style="display:none;">
+      <div class="stat-value mono" id="stat-trail-length">—</div>
+      <div class="stat-label">Longitud del sendero</div>
+    </div>
+  </div>
+</header>
+
+<div class="map-wrap">
+  <div id="map"></div>
+  <div id="scroll-hint" style="
+    position:absolute; left:50%; top:14px; transform:translateX(-50%);
+    background:rgba(22,64,63,0.88); color:white; padding:.4rem .9rem;
+    border-radius:999px; font-size:.78rem; font-family:'Public Sans',sans-serif;
+    pointer-events:none; z-index:1000; white-space:nowrap; transition:opacity .3s;
+  ">Haz clic en el mapa para activar el zoom con scroll</div>
+  <div id="empty-banner" class="empty-banner">
+    No hay puntos documentados todavía. En cuanto agregues fotos a <code>images/</code> y ejecutes <code>generate_pins.py</code>, aparecerán aquí automáticamente.
+  </div>
+  <div class="location-tabs" id="location-tabs" style="display:none;"></div>
+</div>
+</div>
+
+<main>
+  <section>
+    <h2 id="problem-heading"></h2>
+    <p id="problem-text"></p>
+  </section>
+
+  <section>
+    <h2 id="ask-heading"></h2>
+    <ul class="ask-list" id="ask-list"></ul>
+  </section>
+</main>
+
+<footer>
+  Hecho con Huella en el Río — un registro autoalojado del estado del sendero, sin necesidad de descargar nada.
+</footer>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" aria-label="Cerrar">✕</button>
+  <div class="lightbox-body">
+    <img id="lightbox-img" src="" alt="Foto ampliada">
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="pins.js"></script>
+<script src="trail.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxCaption = document.getElementById('lightbox-caption');
+  window.openLightbox = function(opts) {
+    lightboxImg.src = opts.src;
+    const parts = [];
+    if (opts.locationName) parts.push(`<div class="lb-loc">${opts.locationName}</div>`);
+    if (opts.cleaned) parts.push(`<div class="lb-badge">✓ Ya limpio</div>`);
+    if (opts.caption) parts.push(`<div class="lb-cap">${opts.caption}</div>`);
+    if (opts.date) parts.push(`<div class="lb-date">${opts.date}</div>`);
+    lightboxCaption.innerHTML = parts.join('');
+    lightbox.classList.add('open');
+  };
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxImg.src = '';
+    lightboxCaption.innerHTML = '';
+  }
+  lightbox.addEventListener('click', closeLightbox);
+  lightboxImg.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+  document.getElementById('site-title').textContent = CONFIG.siteTitle;
+  document.getElementById('site-tagline').textContent = CONFIG.tagline;
+  document.getElementById('documented-by').textContent =
+    CONFIG.documentedBy + (CONFIG.contactEmail ? ' · ' + CONFIG.contactEmail : '');
+
+  if (typeof PAIRS !== 'undefined' && PAIRS.length > 0) {
+    document.getElementById('lqnv-link').style.display = 'inline-block';
+  }
+  document.getElementById('problem-heading').textContent = CONFIG.problemHeading;
+  document.getElementById('problem-text').textContent = CONFIG.problemText;
+  document.getElementById('ask-heading').textContent = CONFIG.askHeading;
+
+  const askList = document.getElementById('ask-list');
+  CONFIG.asks.forEach(a => {
+    const li = document.createElement('li');
+    li.textContent = a;
+    askList.appendChild(li);
+  });
+
+  // LOCATIONS is new (multi-location support); fall back gracefully if an
+  // older pins.js without it is still in place.
+  const ALL_LOCATIONS = typeof LOCATIONS !== 'undefined' ? LOCATIONS : [];
+  // trail.js only describes one physical trail today. TRAIL_LOCATION lets
+  // trail.js optionally say which location slug it belongs to; if it
+  // doesn't say, we assume it belongs to the first location (or "rio-ramos"
+  // for older projects) so existing trails keep showing up correctly.
+  const TRAIL_LOC = typeof TRAIL_LOCATION !== 'undefined'
+    ? TRAIL_LOCATION
+    : (ALL_LOCATIONS[0] ? ALL_LOCATIONS[0].slug : 'rio-ramos');
+
+  let activeLocation = 'all'; // 'all' or a location slug
+
+  function statsFor(pins) {
+    document.getElementById('stat-total').textContent = pins.length;
+    document.getElementById('stat-cleaned').textContent = pins.filter(p => p.status === 'cleaned').length;
+    const dates = pins.map(p => p.date).filter(Boolean).sort();
+    if (dates.length) {
+      const first = dates[0].slice(0, 10).replace(/:/g, '-');
+      const last = dates[dates.length - 1].slice(0, 10).replace(/:/g, '-');
+      document.getElementById('stat-range').textContent = first === last ? first : `${first} → ${last}`;
+    } else {
+      document.getElementById('stat-range').textContent = '—';
+    }
+  }
+
+  const hasTrail = typeof TRAIL_LINE !== 'undefined' && TRAIL_LINE.length > 0;
+  const hasLandmarks = typeof TRAIL_LANDMARKS !== 'undefined' && TRAIL_LANDMARKS.length > 0;
+  const hasPins = PINS.length > 0;
+
+  if (!hasTrail && !hasPins) {
+    document.getElementById('empty-banner').style.display = 'flex';
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('scroll-hint').style.display = 'none';
+    statsFor(PINS);
+  } else {
+    const map = L.map('map', {
+      scrollWheelZoom: false,
+      zoomSnap: 0.25,   // allow closer-than-whole-number zoom so the trail fits tighter
+      zoomDelta: 0.25,  // keep manual +/- steps consistent with that
+    }).setView(CONFIG.mapCenter, CONFIG.mapZoom);
+
+    const scrollHint = document.getElementById('scroll-hint');
+    map.once('click', () => {
+      map.scrollWheelZoom.enable();
+      scrollHint.style.opacity = '0';
+      setTimeout(() => scrollHint.remove(), 300);
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    function haversineKm(a, b) {
+      const R = 6371;
+      const dLat = (b[0] - a[0]) * Math.PI / 180;
+      const dLng = (b[1] - a[1]) * Math.PI / 180;
+      const lat1 = a[0] * Math.PI / 180, lat2 = b[0] * Math.PI / 180;
+      const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    const waypointIcon = (n) => L.divIcon({
+      className: '',
+      html: `<div style="width:22px;height:22px;border-radius:50%;background:#16403F;color:white;
+              display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+              font-size:10px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,.35);">${n}</div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    });
+    const amberIcon = L.divIcon({
+      className: '',
+      html: `<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#D97A25;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.35);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 22],
+    });
+    const clearedIcon = L.divIcon({
+      className: '',
+      html: `<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#4F7A5B;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.35);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 22],
+    });
+
+    let mapLayers = []; // everything drawn for the current selection, so we can clear and redraw
+
+    function renderMap(locationSlug) {
+      mapLayers.forEach(l => map.removeLayer(l));
+      mapLayers = [];
+      const bounds = [];
+
+      const showTrail = hasTrail && (locationSlug === 'all' || locationSlug === TRAIL_LOC);
+      if (showTrail) {
+        let totalKm = 0;
+        for (let i = 1; i < TRAIL_LINE.length; i++) totalKm += haversineKm(TRAIL_LINE[i-1], TRAIL_LINE[i]);
+        document.getElementById('trail-length-stat').style.display = 'block';
+        document.getElementById('stat-trail-length').textContent = totalKm.toFixed(1) + ' km';
+
+        const line = L.polyline(TRAIL_LINE, { color: '#3E7C7C', weight: 4, opacity: 0.8 }).addTo(map);
+        mapLayers.push(line);
+        TRAIL_LINE.forEach(pt => bounds.push(pt));
+
+        if (hasLandmarks) {
+          TRAIL_LANDMARKS.forEach((p, i) => {
+            bounds.push([p.lat, p.lng]);
+            const m = L.marker([p.lat, p.lng], { icon: waypointIcon(i + 1) }).addTo(map).bindPopup(`<strong>${p.label}</strong>`);
+            mapLayers.push(m);
+          });
+        }
+      } else {
+        document.getElementById('trail-length-stat').style.display = 'none';
+      }
+
+      const filteredPins = locationSlug === 'all' ? PINS : PINS.filter(p => p.location === locationSlug);
+      filteredPins.forEach(p => {
+        bounds.push([p.lat, p.lng]);
+        const isCleaned = p.status === 'cleaned';
+        const showLoc = locationSlug === 'all' && p.locationName;
+        const m = L.marker([p.lat, p.lng], { icon: isCleaned ? clearedIcon : amberIcon }).addTo(map);
+        m.on('click', () => openLightbox({
+          src: p.image,
+          caption: p.caption,
+          date: p.date,
+          cleaned: isCleaned,
+          locationName: showLoc ? p.locationName : null,
+        }));
+        mapLayers.push(m);
+      });
+
+      statsFor(filteredPins);
+
+      // Centering: prefer an explicit lat/lng/zoom from location.json, then
+      // fitBounds from whatever pins/trail points we have, then the global default.
+      const loc = ALL_LOCATIONS.find(l => l.slug === locationSlug);
+      if (locationSlug !== 'all' && loc && loc.lat != null && loc.lng != null) {
+        map.setView([loc.lat, loc.lng], loc.zoom || CONFIG.mapZoom);
+      } else if (bounds.length > 1) {
+        map.fitBounds(bounds, { paddingTopLeft: [30, 100], paddingBottomRight: [30, 5] });
+      } else if (bounds.length === 1) {
+        map.setView(bounds[0], 14);
+      } else {
+        map.setView(CONFIG.mapCenter, CONFIG.mapZoom);
+      }
+    }
+
+    function renderLocationTabs() {
+      const wrap = document.getElementById('location-tabs');
+      if (ALL_LOCATIONS.length < 2) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'flex';
+      wrap.innerHTML = '';
+
+      const makeTab = (label, slug) => {
+        const btn = document.createElement('button');
+        btn.className = 'location-tab' + (activeLocation === slug ? ' active' : '');
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+          activeLocation = slug;
+          renderLocationTabs();
+          renderMap(slug);
+        });
+        return btn;
+      };
+
+      wrap.appendChild(makeTab('Todas las ubicaciones', 'all'));
+      ALL_LOCATIONS.forEach(loc => wrap.appendChild(makeTab(loc.name, loc.slug)));
+    }
+
+    renderLocationTabs();
+    renderMap('all');
+  }
+</script>
+
+</body>
+</html>
