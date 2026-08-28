@@ -1612,19 +1612,9 @@ const TRAIL_LINE = [
 
 const TRAIL_LANDMARKS = [
   {
-    "lat": 25.235877,
-    "lng": -100.06693,
-    "label": "Cozumelito"
-  },
-  {
-    "lat": 25.23101,
-    "lng": -100.069681,
-    "label": "La Playita"
-  },
-  {
-    "lat": 25.229893,
-    "lng": -100.073036,
-    "label": "Media luna"
+    "lat": 25.22557,
+    "lng": -100.059601,
+    "label": "Estacionamiento Río Ramos"
   },
   {
     "lat": 25.228047,
@@ -1632,8 +1622,18 @@ const TRAIL_LANDMARKS = [
     "label": "Charco de las víboras"
   },
   {
-    "lat": 25.22557,
-    "lng": -100.059601,
-    "label": "Estacionamiento Río Ramos"
+    "lat": 25.229893,
+    "lng": -100.073036,
+    "label": "Media luna"
+  },
+  {
+    "lat": 25.23101,
+    "lng": -100.069681,
+    "label": "La Playita"
+  },
+  {
+    "lat": 25.235877,
+    "lng": -100.06693,
+    "label": "Cozumelito"
   }
 ];
