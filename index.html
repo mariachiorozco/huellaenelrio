@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
 <style>
   :root{
     --deep-river:#16403F;
@@ -48,13 +50,6 @@
     font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
     color:#F2C48A;margin-bottom:.35rem;
   }
-  .brand-link{
-    display:inline-block;
-    font-family:'JetBrains Mono',monospace;
-    font-size:.75rem;color:#CFE0DD;text-decoration:none;
-    margin-bottom:.5rem;
-  }
-  .brand-link:hover{color:white;}
   header h1{font-size:2rem;}
   header p.tagline{color:#CFE0DD;max-width:38rem;margin:.5rem auto 0;font-size:1rem;}
   .doc-by{color:#9FC4BE;font-size:.85rem;margin-top:.6rem;}
@@ -270,6 +265,7 @@
 <script src="pins.js"></script>
 <script src="trail.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script>
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
@@ -395,6 +391,22 @@
       iconAnchor: [11, 22],
     });
 
+    function clusterIconFactory(color) {
+      return function (cluster) {
+        const count = cluster.getChildCount();
+        const size = count < 10 ? 34 : count < 25 ? 42 : 50;
+        return L.divIcon({
+          className: '',
+          html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};color:white;
+                  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+                  font-weight:600;font-size:${count < 10 ? 13 : 14}px;border:3px solid white;
+                  box-shadow:0 2px 8px rgba(0,0,0,0.4);">${count}</div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        });
+      };
+    }
+
     let mapLayers = []; // everything drawn for the current selection, so we can clear and redraw
 
     function renderMap(locationSlug) {
@@ -425,11 +437,20 @@
       }
 
       const filteredPins = locationSlug === 'all' ? PINS : PINS.filter(p => p.location === locationSlug);
+      const reportedCluster = L.markerClusterGroup({
+        iconCreateFunction: clusterIconFactory('#D97A25'),
+        maxClusterRadius: 50,
+      });
+      const clearedCluster = L.markerClusterGroup({
+        iconCreateFunction: clusterIconFactory('#4F7A5B'),
+        maxClusterRadius: 50,
+      });
+
       filteredPins.forEach(p => {
         bounds.push([p.lat, p.lng]);
         const isCleaned = p.status === 'cleaned';
         const showLoc = locationSlug === 'all' && p.locationName;
-        const m = L.marker([p.lat, p.lng], { icon: isCleaned ? clearedIcon : amberIcon }).addTo(map);
+        const m = L.marker([p.lat, p.lng], { icon: isCleaned ? clearedIcon : amberIcon });
         m.on('click', () => openLightbox({
           src: p.image,
           caption: p.caption,
@@ -437,8 +458,12 @@
           cleaned: isCleaned,
           locationName: showLoc ? p.locationName : null,
         }));
-        mapLayers.push(m);
+        (isCleaned ? clearedCluster : reportedCluster).addLayer(m);
       });
+
+      reportedCluster.addTo(map);
+      clearedCluster.addTo(map);
+      mapLayers.push(reportedCluster, clearedCluster);
 
       statsFor(filteredPins);
 
