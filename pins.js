@@ -6,7 +6,7 @@ const PINS = [
     "lat": 25.224992,
     "lng": -100.060639,
     "image": "images/Canavati_a_Media_Luna/IMG_7997.jpg",
-    "caption": "",
+    "caption": "1",
     "date": "2026:08:27 07:04:35",
     "status": "reported"
   },
@@ -14,7 +14,7 @@ const PINS = [
     "lat": 25.224922,
     "lng": -100.060731,
     "image": "images/Canavati_a_Media_Luna/IMG_7999.jpg",
-    "caption": "",
+    "caption": "2",
     "date": "2026:08:27 07:05:21",
     "status": "reported"
   },
@@ -22,7 +22,7 @@ const PINS = [
     "lat": 25.224644,
     "lng": -100.060997,
     "image": "images/Canavati_a_Media_Luna/IMG_8003.jpg",
-    "caption": "",
+    "caption": "3",
     "date": "2026:08:27 07:06:44",
     "status": "reported"
   },
@@ -30,7 +30,7 @@ const PINS = [
     "lat": 25.224539,
     "lng": -100.061158,
     "image": "images/Canavati_a_Media_Luna/IMG_8006.jpg",
-    "caption": "",
+    "caption": "4",
     "date": "2026:08:27 07:07:41",
     "status": "reported"
   },
@@ -38,7 +38,7 @@ const PINS = [
     "lat": 25.224603,
     "lng": -100.061119,
     "image": "images/Canavati_a_Media_Luna/IMG_8007.jpg",
-    "caption": "",
+    "caption": "5",
     "date": "2026:08:27 07:08:01",
     "status": "reported"
   },
@@ -46,7 +46,7 @@ const PINS = [
     "lat": 25.224361,
     "lng": -100.061547,
     "image": "images/Canavati_a_Media_Luna/IMG_8011.jpg",
-    "caption": "",
+    "caption": "6",
     "date": "2026:08:27 07:12:23",
     "status": "reported"
   },
@@ -54,7 +54,7 @@ const PINS = [
     "lat": 25.224139,
     "lng": -100.062111,
     "image": "images/Canavati_a_Media_Luna/IMG_8012.jpg",
-    "caption": "",
+    "caption": "7",
     "date": "2026:08:27 07:14:18",
     "status": "reported"
   },
