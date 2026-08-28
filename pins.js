@@ -99,22 +99,6 @@ const PINS = [
     "status": "reported"
   },
   {
-    "lat": 25.224353,
-    "lng": -100.063156,
-    "image": "images/Canavati_a_Media_Luna/IMG_8080.jpg",
-    "caption": "",
-    "date": "2026:08:27 09:10:52",
-    "status": "reported"
-  },
-  {
-    "lat": 25.225094,
-    "lng": -100.060769,
-    "image": "images/Canavati_a_Media_Luna/IMG_8084.jpg",
-    "caption": "",
-    "date": "2026:08:27 09:16:06",
-    "status": "reported"
-  },
-  {
     "lat": 25.225683,
     "lng": -100.060189,
     "image": "images/Canavati_a_Media_Luna/IMG_8086.jpg",
